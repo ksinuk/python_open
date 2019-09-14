@@ -124,6 +124,13 @@ def check_error_table(main_table):
                 for i in range(9):
                     if main_table[y][i]['ok'] and i != x and main_table[y][i]['out'] == now_num:
                         return False
+                    if main_table[i][x]['ok'] and i != y and main_table[i][x]['out'] == now_num:
+                        return False
+                for point in out_area9_index(main_table, x, y):
+                    yy = point[0]
+                    xx = point[1]
+                    if main_table[yy][xx]['ok'] and (yy != y or xx != x) and main_table[yy][xx] == now_num:
+                        return False  
             else:
                 error_cnt = 0
                 for n in range(1,10):
@@ -140,30 +147,73 @@ def if_end_table(main_table):
                 return False
     return True
 
-def sort_table_list(main_table):
-    outlist = []
+def backTracking(pre_table):
+    if not(check_error_table(pre_table)):
+        return False
+    if if_end_table(pre_table):
+        return pre_table
+
+    mincnt = 100
+    point = [0,0]
     for y in range(9):
         for x in range(9):
-            templist = main_table[y][x]['nums']
+            templist = pre_table[y][x]['nums']
+            if pre_table[y][x]['ok'] == True:
+                continue
             cnt = 0
             for n in range(1,10):
-                if main_table[y][x]['nums'][n] > 0:
+                if  templist[n] > 0:
                     cnt += 1
-            outlist.push([y,x,cnt])
+            if mincnt > cnt:
+                mincnt = cnt
+                point = [y,x]
     
-    step = 1
-    point = 0
-    while step < outlist.len:
-        start_a = point
-        start_b = end_a = point+step
-        end_b = point+step*2 if point+step*2 < outlist.len else outlist.len
+    y , x = point[0], point[1]
+    inputList = pre_table[y][x]['nums']
+
+    for num in inputList:
+        if num<1 or num>9:
+            continue
+        cal_cnt = [0]
+        main_table = deepcopy_table(pre_table)
+        input_num(main_table, y, x, num, cal_cnt)
+
+        while cal_cnt[0]:
+            cal_cnt[0] = 0
+            check_table(main_table, cal_cnt)
+            check_table(main_table, cal_cnt)
         
+        isNotError = check_error_table(main_table)
+        if not(isNotError):
+            continue
         
+        output = backTracking(main_table)
+        if output == False:
+            continue
+        else:
+            return output 
+    
+    return False
+# --------------------------------------------------------------------------------------------------------------           
+def printOut(main_table):
+    if check_error_table(main_table) == False:
+        print("this table is not stoku!")
+        return 0
+    for y in range(9):
+        if y%3==0 and y!=0:
+            for x in range(9):
+                print('--',end='')
+            print()
 
-
-def backTracking(pre_table):
-    main_table = deepcopy_table(pre_table)
-
+        for x in range(9):
+            if x%3==0 and x!=0:
+                print('|',end='')
+            if not(main_table[y][x]['ok']):
+                print(' ',end='')
+            else:
+                print(main_table[y][x]['out'],end='')
+        print()
+    print("===========================================")
 # --------------------------------------------------------------------------------------------------------------
 
 main_table = [ [ {'ok':False, 'out':-1, 'nums':[0,1,2,3,4,5,6,7,8,9]} for i in range(9)]  for j in range(9) ]
@@ -172,29 +222,26 @@ stoku_cnt = [0]
 # input num in text -------------------------------------------------------------------
 for y in range(9):
     line = list(input())
-    orignNum = ['0','1','2','3','4','5','6','7','8','9']
+    orignNum = ['none','1','2','3','4','5','6','7','8','9']
     for x in range(9):
         if line[x] in orignNum:
             num = orignNum.index(line[x])
             input_num(main_table, y, x, num, stoku_cnt, True)
 
+printOut(main_table)
 
 while stoku_cnt[0]:
     stoku_cnt[0] = 0
     check_table(main_table, stoku_cnt)
     check_table(main_table, stoku_cnt)
 
-for y in range(9):
-    print()
-    if y%3==0 and y!=0:
-        print()
+printOut(main_table)
 
-    for x in range(9):
-        if x%3==0 and x!=0:
-            print(' ',end='')
-        if not(main_table[y][x]['ok']):
-            print(' ',end='')
-        else:
-            print(main_table[y][x]['out'],end='')
+main_table = backTracking(main_table)
+# print out page ----------------
+if main_table == False:
+    print("this table is not stoku!")
+else:
+    printOut(main_table)
 
 
